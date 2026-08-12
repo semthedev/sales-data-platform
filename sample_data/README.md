@@ -1,17 +1,17 @@
-# Описание датасета
+# Dataset description
 
-CSV-файлы содержат нормализованную выгрузку из анонимизированного набора для курсового проекта Sapiens Solutions. Идентификаторы магазинов, чеков, материалов, акций и купонов относятся только к учебному набору; имён и контактов покупателей в данных нет.
+The CSV files contain a normalized extract from an anonymized dataset used for the Sapiens Solutions course project. Store, receipt, material, promotion and coupon identifiers refer only to the training dataset; the data contains no customer names or contact details.
 
-Исходный Excel преобразован в схему репозитория следующим образом:
+The source Excel file was converted into the repository schema as follows:
 
-| CSV | Лист Excel | Преобразование |
+| CSV | Excel sheet | Transformation |
 | --- | --- | --- |
-| `stores.csv` | `Магазины` | Код магазина и нейтральное отображаемое название |
-| `promo_types.csv` | `Тип акции` | Код и описание типа акции |
-| `promos.csv` | `Акции` | Акция, материал, тип и величина скидки |
-| `bills_head.csv` | `Чеки` | Одна строка на чек с магазином и датой |
-| `bills_item.csv` | `Чеки` | Строки сгруппированы по чеку и материалу; выручка и количество суммируются |
-| `traffic.csv` | `Трафик` | Часовые интервалы агрегированы в дневной трафик магазина |
-| `coupons.csv` | `coupons` | Связь купона сохранена только при наличии строки чека и акции |
+| `stores.csv` | `Магазины` (Stores) | Store code and a neutral display name |
+| `promo_types.csv` | `Тип акции` (Promo type) | Promotion type code and description |
+| `promos.csv` | `Акции` (Promotions) | Promotion, material, type and discount amount |
+| `bills_head.csv` | `Чеки` (Receipts) | One row per receipt with store and date |
+| `bills_item.csv` | `Чеки` (Receipts) | Rows grouped by receipt and material; revenue and quantity summed |
+| `traffic.csv` | `Трафик` (Traffic) | Hourly intervals aggregated into daily store traffic |
+| `coupons.csv` | `coupons` | Coupon link kept only where a receipt line item and a promotion exist |
 
-Исходный workbook не входит в репозиторий. Это оставляет пример компактным и исключает распространение устаревших реквизитов подключения, которые находились в учебных документах.
+The source workbook is not included in the repository. This keeps the example compact and avoids distributing the stale connection credentials that were present in the course documents.

@@ -1,60 +1,60 @@
-# Платформа аналитики продаж
+# Sales Analytics Platform
 
-Проект строит витрину эффективности магазинов из чеков, трафика и промоакций. PostgreSQL используется как лёгкое локальное хранилище, Greenplum SQL описывает целевую MPP-модель, а готовая витрина публикуется в ClickHouse для BI.
+The project builds a store performance mart from receipts, foot traffic and promotions. PostgreSQL serves as a lightweight local warehouse, Greenplum SQL describes the target MPP model, and the finished mart is published to ClickHouse for BI.
 
-Первая версия была моей итоговой работой на курсе Sapiens Solutions по Greenplum. Позже я пересобрал её как воспроизводимый репозиторий с тестами и автоматическими проверками. В `sample_data` лежит нормализованная выгрузка из анонимизированного учебного набора, а не синтетические данные.
+The first version was my capstone project for the Sapiens Solutions Greenplum course. I later rebuilt it as a reproducible repository with tests and automated checks. `sample_data` holds a normalized extract from an anonymized training dataset rather than synthetic data.
 
-## Поток данных
+## Data flow
 
-![Поток данных платформы аналитики продаж](docs/architecture.svg)
+![Sales analytics platform data flow](docs/architecture.svg)
 
-Airflow координирует загрузку CSV в PostgreSQL или Greenplum, построение витрины эффективности магазинов и публикацию результата в ClickHouse. Облегчённый Compose-стенд запускает те же этапы напрямую и не скачивает полный образ Airflow. DAG из `dags/` предназначен для развёртывания пакета в существующем Airflow-окружении.
+Airflow orchestrates loading CSVs into PostgreSQL or Greenplum, building the store performance mart, and publishing the result to ClickHouse. A lightweight Compose stack runs the same stages directly without pulling the full Airflow image. The DAG in `dags/` is meant for deploying the package into an existing Airflow environment.
 
-В витрине рассчитываются оборот до и после скидок, скидки, количество проданных товаров и чеков, трафик, конверсия, доля промотоваров и средний чек. Поле называется `net_revenue`, а не profit: выручка после скидок не равна бухгалтерской прибыли.
+The mart computes gross and net revenue, discounts, units and receipts sold, foot traffic, conversion, promo share and average check. The field is named `net_revenue` rather than profit: revenue after discounts is not accounting profit.
 
-## Запуск пайплайна
+## Running the pipeline
 
-Требуется Docker с Compose.
+Requires Docker with Compose.
 
 ```bash
 docker compose up --build --abort-on-container-exit pipeline
 ```
 
-Команда создаёт исходные таблицы и слой хранилища, загружает данные, строит `sales.mart_store_performance`, выполняет проверки и публикует результат в ClickHouse.
+The command creates the source tables and the warehouse layer, loads the data, builds `sales.mart_store_performance`, runs the checks and publishes the result to ClickHouse.
 
-Проверить витрину в PostgreSQL:
+Inspect the mart in PostgreSQL:
 
 ```bash
 docker compose exec postgres psql -U sales -d sales -c \
   "select * from sales.mart_store_performance order by plant"
 ```
 
-Проверить таблицу в ClickHouse:
+Inspect the table in ClickHouse:
 
 ```bash
 docker compose exec clickhouse clickhouse-client --query \
   "select * from sales.mart_store_performance order by plant format PrettyCompact"
 ```
 
-`docker compose down -v` останавливает контейнеры и удаляет локальные данные стенда.
+`docker compose down -v` stops the containers and removes the local stack data.
 
-## Инженерные решения
+## Engineering decisions
 
-В Greenplum заголовки и строки чеков распределяются по `billnum`, небольшие справочники реплицируются, факты партиционируются по дате и хранятся в append-optimized column tables. Локальный PostgreSQL не имитирует распределение Greenplum. Он нужен для воспроизводимого запуска преобразований и тестов.
+In Greenplum, receipt headers and line items are distributed by `billnum`, small dimensions are replicated, and facts are partitioned by date and stored as append-optimized column tables. The local PostgreSQL does not emulate Greenplum's distribution. It exists to run the transformations and tests reproducibly.
 
-Витрина начинается со справочника магазинов и присоединяет агрегаты через `LEFT JOIN`, поэтому магазин не исчезает при отсутствии трафика или промоданных. Дубликаты купонов разрешаются детерминированно с помощью `row_number()`.
+The mart starts from the store dimension and attaches aggregates via `LEFT JOIN`, so a store does not disappear when traffic or promo data is missing. Duplicate coupons are resolved deterministically with `row_number()`.
 
-Перед публикацией проверяются:
+Before publishing, the pipeline verifies:
 
-- Уникальность бизнес-ключей и grain витрины.
-- Неотрицательные количества, выручка, трафик и скидки.
-- Ссылочная целостность между заголовками и строками чеков.
-- Сверка выручки с исходными строками.
-- Допустимые диапазоны конверсии и доли промотоваров.
+- Uniqueness of business keys and the mart grain.
+- Non-negative quantities, revenue, traffic and discounts.
+- Referential integrity between receipt headers and line items.
+- Revenue reconciliation against the source line items.
+- Valid ranges for conversion and promo share.
 
-Любая ошибка останавливает пайплайн.
+Any failure stops the pipeline.
 
-## Запуск отдельных этапов
+## Running individual stages
 
 ```bash
 python -m sales_pipeline init
@@ -63,22 +63,22 @@ python -m sales_pipeline publish
 python -m sales_pipeline all
 ```
 
-Параметры подключения задаются переменными из `.env.example`.
+Connection settings come from the variables in `.env.example`.
 
-## Структура
+## Layout
 
 ```text
 dags/               Airflow DAG
-docs/               диаграммы и материалы исходного стенда
-sample_data/        нормализованный анонимизированный набор
-sales_pipeline/     запуск этапов и проверки качества
-sql/marts/          переносимый запрос витрины
-sql/postgres/       локальная схема
-sql/greenplum/      целевая MPP-схема
-tests/              тесты витрины и конфигурации
+docs/               diagrams and material from the original stack
+sample_data/        normalized anonymized dataset
+sales_pipeline/     stage runner and data quality checks
+sql/marts/          portable mart query
+sql/postgres/       local schema
+sql/greenplum/      target MPP schema
+tests/              mart and configuration tests
 ```
 
-## Проверки
+## Checks
 
 ```bash
 python -m pip install -e ".[dev]"
@@ -87,16 +87,16 @@ ruff check .
 ruff format --check .
 ```
 
-## Данные и иллюстрации
+## Data and illustrations
 
-Набор охватывает 15 анонимизированных магазинов за январь и февраль 2021 года: 3 213 чеков, 10 516 агрегированных строк чеков, 885 дневных записей трафика и 597 купонов. Дубликаты строк исходного Excel сгруппированы по чеку и материалу. Эта пара полей служит бизнес-ключом таблицы хранилища.
+The dataset covers 15 anonymized stores over January and February 2021: 3,213 receipts, 10,516 aggregated receipt line items, 885 daily traffic records and 597 coupons. Duplicate rows from the source Excel file are grouped by receipt and material. That pair of fields serves as the business key of the warehouse table.
 
-Исходный Excel, конспекты и презентация не публикуются: в них были реквизиты учебного стенда. Сопоставление листов и CSV описано в [sample_data/README.md](sample_data/README.md).
+The source Excel file, notes and presentation are not published: they contained credentials for the training stack. The mapping between sheets and CSVs is described in [sample_data/README.md](sample_data/README.md).
 
-ER-диаграмма и скриншот Superset взяты из исходного учебного окружения. Старый граф Airflow оставлен как историческое подтверждение и содержит учебное имя схемы; поддерживаемый DAG и локальный стенд используют нейтральные имена.
+The ER diagram and the Superset screenshot come from the original training environment. The old Airflow graph is kept as historical evidence and contains the training schema name; the maintained DAG and the local stack use neutral names.
 
-![ER-диаграмма](docs/erd.png)
+![ER diagram](docs/erd.png)
 
-![Граф Airflow](docs/original-airflow-dag.png)
+![Airflow graph](docs/original-airflow-dag.png)
 
-![Витрина в Superset](docs/superset-dashboard.png)
+![Mart in Superset](docs/superset-dashboard.png)
