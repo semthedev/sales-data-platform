@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1320" height="430" viewBox="0 0 1320 430" role="img" aria-labelledby="diagram-title diagram-description">
   <title id="diagram-title">Sales analytics platform data flow</title>
-  <desc id="diagram-description">Data from CSV files goes through orchestration, loading into PostgreSQL or Greenplum, mart construction, data quality checks and publication to ClickHouse.</desc>
+  <desc id="diagram-description">Data from CSV files goes through orchestration, loading into PostgreSQL or Greenplum, mart construction, data quality checks and publication to ClickHouse. A PySpark stage rebuilds the mart, checks parity with the SQL mart and writes a separate ClickHouse table.</desc>
   <defs>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
       <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#0F172A" flood-opacity="0.08"/>
@@ -78,10 +78,19 @@
     <text x="1072" y="241" class="detail">for BI and Superset</text>
   </g>
 
+  <path d="M970 261 L970 348 L1056 348" class="arrow"/>
+  <path d="M1170 296 L1170 266" class="arrow"/>
+  <g>
+    <rect x="1060" y="296" width="220" height="104" rx="16" fill="#FEFCE8" stroke="#FACC15" class="card"/>
+    <text x="1082" y="326" class="eyebrow">SPARK</text>
+    <text x="1082" y="354" class="title">PySpark mart</text>
+    <text x="1082" y="380" class="detail">Parity with SQL mart</text>
+  </g>
+
   <path d="M900 261 L900 302" fill="none" stroke="#EA580C" stroke-width="2"/>
   <g>
-    <rect x="726" y="302" width="348" height="76" rx="14" fill="#FFF7ED" stroke="#FDBA74" stroke-width="2"/>
-    <text x="750" y="331" class="note-title">Publish only after checks pass</text>
-    <text x="750" y="357" class="note">A quality failure stops the pipeline.</text>
+    <rect x="560" y="302" width="348" height="76" rx="14" fill="#FFF7ED" stroke="#FDBA74" stroke-width="2"/>
+    <text x="584" y="331" class="note-title">Publish only after checks pass</text>
+    <text x="584" y="357" class="note">A quality failure stops the pipeline.</text>
   </g>
 </svg>

@@ -21,11 +21,18 @@ def run_stage(stage: str, settings: Settings) -> None:
         row_count = publish(settings, columns, rows)
         print(f"ClickHouse serving table published: {row_count} rows")
 
+    if stage in {"spark", "all"}:
+        # Imported lazily so the SQL stages run without pyspark and a JVM installed.
+        from sales_pipeline.spark_mart import run_spark_stage
+
+        row_count = run_spark_stage(settings)
+        print(f"Spark mart matches SQL mart and is published to ClickHouse: {row_count} rows")
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the retail sales data pipeline")
     parser.add_argument(
-        "stage", choices=["init", "mart", "publish", "all"], nargs="?", default="all"
+        "stage", choices=["init", "mart", "publish", "spark", "all"], nargs="?", default="all"
     )
     args = parser.parse_args()
     run_stage(args.stage, Settings.from_environment())
