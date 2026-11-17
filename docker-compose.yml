@@ -15,6 +15,9 @@ services:
 
   clickhouse:
     image: clickhouse/clickhouse-server:24.8
+    environment:
+      # Local stack only: keep the passwordless default user reachable from other containers.
+      CLICKHOUSE_SKIP_USER_SETUP: 1
     ports:
       - "8123:8123"
       - "9000:9000"
