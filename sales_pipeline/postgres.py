@@ -29,7 +29,7 @@ def _load_csv(connection: psycopg.Connection, table: str, path: Path) -> None:
         connection.execute(f"truncate table sales.{table} cascade")
         column_list = ", ".join(columns)
         with connection.cursor().copy(
-            f"copy sales.{table} ({column_list}) from stdin with (format csv)"
+            f"copy sales.{table} ({column_list}) from stdin"
         ) as copy:
             for row in reader:
                 copy.write_row(row)
