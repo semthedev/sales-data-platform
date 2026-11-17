@@ -12,7 +12,7 @@ with DAG(
     schedule="0 5 * * *",
     catchup=False,
     max_active_runs=1,
-    tags=["data-engineering", "greenplum", "clickhouse"],
+    tags=["data-engineering", "greenplum", "clickhouse", "spark"],
 ) as dag:
     initialize_sources = BashOperator(
         task_id="initialize_sources",
@@ -26,5 +26,11 @@ with DAG(
         task_id="publish_to_clickhouse",
         bash_command="python -m sales_pipeline publish",
     )
+    # Rebuilds the mart in Spark, checks parity with the SQL mart and writes
+    # sales.mart_store_performance_spark. SPARK_MASTER selects local mode or a cluster.
+    build_spark_mart = BashOperator(
+        task_id="build_spark_mart",
+        bash_command="python -m sales_pipeline spark",
+    )
 
-    initialize_sources >> build_and_validate_mart >> publish_to_clickhouse
+    initialize_sources >> build_and_validate_mart >> [publish_to_clickhouse, build_spark_mart]
