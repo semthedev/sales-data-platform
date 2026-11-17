@@ -16,7 +16,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["duckdb>=1.2,<2", "pytest>=8,<10", "ruff>=0.9,<1"]
+spark = ["pyspark>=4.0.1,<4.1"]
+dev = ["duckdb>=1.2,<2", "pyspark>=4.0.1,<4.1", "pytest>=8,<10", "ruff>=0.9,<1"]
 
 [tool.setuptools.packages.find]
 include = ["sales_pipeline*"]
